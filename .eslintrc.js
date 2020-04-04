@@ -22,6 +22,7 @@ module.exports = {
     },
   },
   globals: {
+    Reflect: true,
     Proxy: true,
     WeakMap: true,
     Symbol: true,

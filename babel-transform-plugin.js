@@ -1,14 +1,12 @@
-//function get_safe_get(safe_get_name) {
-//  return t.AssignmentExpression(safe_get_name, )
-//}
-
 module.exports = function({types: t, template}) {
 
+  let safe_get_name, safe_set_name
+
   function generateSafeGetCall(object, _property, computed) {
-    property = computed ? _property : t.stringLiteral(_property.name)
+    const property = computed ? _property : t.stringLiteral(_property.name)
 
     return t.callExpression(
-      t.identifier('safe_set'),
+      safe_get_name,
       [
         object,
         property
@@ -17,10 +15,10 @@ module.exports = function({types: t, template}) {
   }
 
   function generateSafeSetCall(object, _property, computed, rval) {
-    property = computed ? _property : t.stringLiteral(_property.name)
+    const property = computed ? _property : t.stringLiteral(_property.name)
 
     return t.callExpression(
-      t.identifier('safe_set'),
+      safe_set_name,
       [
         object,
         property,
@@ -29,26 +27,41 @@ module.exports = function({types: t, template}) {
     )
   }
 
-  const safe_get_template = (function SAFE_GET_NAME(obj, prop) {
-    if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
-      throw new Error(`Accessing forbidden prop ${props}`)
-    }
-    return obj[prop]
-  }).toString()
+  const create_jail_error = `(function (type, key) {
+      const err = new Error('jail problem')
+      err.sentinel = 'jail-problem'
+      err.type = type
+      err.key = key
+      return err
+    })
+  `
 
-  const safe_set_template = (function SAFE_SET_NAME(obj, prop, value) {
-    if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
-      throw new Error(`Accessing forbidden prop ${props}`)
+  const safe_get_template = `
+    function SAFE_GET_NAME(obj, prop) {
+      if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
+        throw ${create_jail_error}('accessing-forbidden-prop', prop)
+      }
+      let res = obj[prop]
+      if (typeof res === 'function') {
+        res = res.bind(obj)
+      }
+      return res
     }
-    return obj[prop]
-  }).toString()
+  `
+
+  const safe_set_template = `
+    function SAFE_SET_NAME(obj, prop, value) {
+      throw ${create_jail_error}('forbidden-object-modification', prop)
+    }`
 
   return {
     visitor: {
       Program: {
+        enter(path) {
+          safe_get_name = path.scope.generateUidIdentifier('safe_get')
+          safe_set_name = path.scope.generateUidIdentifier('safe_set')
+        },
         exit(path, {opts}) {
-          const safe_get_name = path.scope.generateUidIdentifier('safe_get')
-          const safe_set_name = path.scope.generateUidIdentifier('safe_set')
           path.node.body.push(template(safe_get_template)({SAFE_GET_NAME: safe_get_name}))
           path.node.body.push(template(safe_set_template)({SAFE_SET_NAME: safe_set_name}))
         }
@@ -66,6 +79,16 @@ module.exports = function({types: t, template}) {
           path.node.computed
         ))
       },
+      //ObjectPattern(path) {
+      //  path.traverse({
+      //    Program(path) {
+      //      console.log('aaaaa', path)
+      //    },
+      //    Property(path) {
+      //      console.log('bbbbb', path.node.computed, path.node)
+      //    },
+      //  })
+      //},
     }
   }
 }
