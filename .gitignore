@@ -1,0 +1,9 @@
+node_modules
+*.sw*
+*.log
+webpack-assets.json
+build
+.editorconfig
+.DS_Store
+.history
+.vscode
