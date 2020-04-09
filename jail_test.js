@@ -185,4 +185,25 @@ describe('basics', () => {
     ['pop', 'push', 'splice', 'shift', 'unshift', 'splice', 'fill', 'copyWithin'].forEach(ensure_forbidden)
   })
 
+  iit('Destructuring behavior', () => {
+    assert.deepEqual(safe_eval('const {a} = {a: 1}; a'), 1)
+    ensure_forbidden('const {constructor} = {}', 'accessing-forbidden-property', 'constructor')
+    ensure_forbidden('const {__proto__: a} = {}', 'accessing-forbidden-property', '__proto__')
+    ensure_forbidden('const {prototype: a} = {}', 'accessing-forbidden-property', 'prototype')
+    ensure_forbidden('const x = "sth"; const {[x]: a} = {}', 'computed-property-disallowed')
+
+    function ensure_forbidden(expression, type, key) {
+      try {
+        safe_eval(expression)
+        assert.isTrue(false)
+      } catch (err) {
+        assert.equal(err.type, type)
+        if (key !== undefined) {
+          assert.equal(err.key, key)
+        }
+      }
+    }
+
+  })
+
 })

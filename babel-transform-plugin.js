@@ -1,3 +1,5 @@
+const {create_jail_error} = require('./error_utils')
+
 module.exports = function({types: t, template}) {
 
   let safe_get_name, safe_set_name
@@ -27,7 +29,7 @@ module.exports = function({types: t, template}) {
     )
   }
 
-  const create_jail_error = `(function (type, key) {
+  const create_jail_error_template = `(function (type, key) {
       const err = new Error('jail problem')
       err.sentinel = 'jail-problem'
       err.type = type
@@ -39,7 +41,7 @@ module.exports = function({types: t, template}) {
   const safe_get_template = `
     function SAFE_GET_NAME(obj, prop) {
       if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
-        throw ${create_jail_error}('accessing-forbidden-prop', prop)
+        throw ${create_jail_error_template}('accessing-forbidden-prop', prop)
       }
       let res = obj[prop]
       if (typeof res === 'function') {
@@ -51,7 +53,7 @@ module.exports = function({types: t, template}) {
 
   const safe_set_template = `
     function SAFE_SET_NAME(obj, prop, value) {
-      throw ${create_jail_error}('forbidden-object-modification', prop)
+      throw ${create_jail_error_template}('forbidden-object-modification', prop)
     }`
 
   return {
@@ -78,6 +80,14 @@ module.exports = function({types: t, template}) {
           path.node.property,
           path.node.computed
         ))
+      },
+      Property(path) {
+        const {computed, key: {name}} = path.node
+        if (computed) {
+          throw create_jail_error('computed-property-disallowed')
+        } else if (['__proto__', 'constructor', 'prototype'].includes(name)) {
+          throw create_jail_error('accessing-forbidden-property', name)
+        }
       },
       //ObjectPattern(path) {
       //  path.traverse({
