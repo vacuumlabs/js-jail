@@ -2,7 +2,7 @@ const {create_jail_error, create_jail_error_template} = require('./error_utils')
 
 module.exports = function({types: t, template}) {
 
-  let safe_get_name, safe_set_name
+  let safe_get_name
 
   function generateSafeGetCall(object, _property, computed) {
     const property = computed ? _property : t.stringLiteral(_property.name)
@@ -12,19 +12,6 @@ module.exports = function({types: t, template}) {
       [
         object,
         property
-      ]
-    )
-  }
-
-  function generateSafeSetCall(object, _property, computed, rval) {
-    const property = computed ? _property : t.stringLiteral(_property.name)
-
-    return t.callExpression(
-      safe_set_name,
-      [
-        object,
-        property,
-        rval
       ]
     )
   }
@@ -42,27 +29,20 @@ module.exports = function({types: t, template}) {
     }
   `
 
-  const safe_set_template = `
-    function SAFE_SET_NAME(obj, prop, value) {
-      throw ${create_jail_error_template}('forbidden-object-modification', prop)
-    }`
-
   return {
     visitor: {
       Program: {
         enter(path) {
           safe_get_name = path.scope.generateUidIdentifier('safe_get')
-          safe_set_name = path.scope.generateUidIdentifier('safe_set')
         },
         exit(path, {opts}) {
           path.node.body.push(template(safe_get_template)({SAFE_GET_NAME: safe_get_name}))
-          path.node.body.push(template(safe_set_template)({SAFE_SET_NAME: safe_set_name}))
         }
       },
       AssignmentExpression(path) {
         const {right, left} = path.node
         if (t.isMemberExpression(left)) {
-          path.replaceWith(generateSafeSetCall(left.object, left.property, left.computed, right))
+          throw create_jail_error('forbidden-object-modification')
         }
       },
       MemberExpression(path) {

@@ -98,7 +98,6 @@ describe('basics', () => {
           assert.isTrue(false)
         } catch (err) {
           assert.equal(err.type, 'forbidden-object-modification')
-          assert.equal(err.key, prop)
         }
       } else {
         // object.prop=something should fail
@@ -107,7 +106,6 @@ describe('basics', () => {
           assert.isTrue(false)
         } catch (err) {
           assert.equal(err.type, 'forbidden-object-modification')
-          assert.equal(err.key, prop)
         }
         // object["prop"]=something should fail
         try {
@@ -115,7 +113,6 @@ describe('basics', () => {
           assert.isTrue(false)
         } catch (err) {
           assert.equal(err.type, 'forbidden-object-modification')
-          assert.equal(err.key, prop)
         }
       }
     }
