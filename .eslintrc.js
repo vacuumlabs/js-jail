@@ -28,7 +28,6 @@ module.exports = {
     Symbol: true,
   },
   root: true,
-  reportUnusedDisableDirectives: true,
   rules: {
     'max-len': [
       'error',
@@ -59,5 +58,4 @@ module.exports = {
     'curly': 0,
     'no-unused-vars': 0,
   },
-  reportUnusedDisableDirectives: false,
 }

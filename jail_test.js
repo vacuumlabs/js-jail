@@ -22,6 +22,22 @@ iit.only = (description, fn) => {
 
 iit.skip = (description, fn) => it.skip(description, fn)
 
+function ensure_forbidden(expression, type, key) {
+  try {
+    safe_eval(expression)
+    assert.isTrue(false)
+  } catch (err) {
+    if (err.type == null) {
+      throw err
+    }
+    assert.equal(err.type, type)
+    if (key !== undefined) {
+      assert.equal(err.key, key)
+    }
+  }
+}
+
+
 describe('basics', () => {
 
   iit('various basic stuff works', () => {
@@ -41,15 +57,6 @@ describe('basics', () => {
 
   iit('Object behavior', () => {
 
-    function ensure_hidden_property(prop_name) {
-      try {
-        safe_eval(`Object.${prop_name}()`)
-        assert.isTrue(false)
-      } catch (err) {
-        assert.equal(err.type, 'accessing-forbidden-object-method')
-        assert.equal(err.key, prop_name)
-      }
-    }
     assert.deepEqual(safe_eval('Object.keys({a: 1, b: 2})'), ['a', 'b'])
     assert.deepEqual(safe_eval('Object.values({a: 1, b: 2})'), [1, 2])
 
@@ -59,7 +66,7 @@ describe('basics', () => {
       'preventExtensions', 'seal', 'create', 'defineProperties', 'defineProperty',
       'freeze', 'getPrototypeOf', 'setPrototypeOf', 'isExtensible', 'isFrozen', 'isSealed']
     for (const prop of unsafe_object_properties) {
-      ensure_hidden_property(prop)
+      ensure_forbidden(`Object.${prop}()`, 'accessing-forbidden-object-method', prop)
     }
   })
 
@@ -69,39 +76,16 @@ describe('basics', () => {
     safe_eval('Array')
     safe_eval('Error')
     safe_eval('Map')
-    safe_eval('Set')
-    // this stuff is hidden
-    try_access_variable('lol')
-    try_access_variable('global')
-    try_access_variable('window')
-    try_access_variable('Reflect')
+    safe_eval('Set');
 
-    function try_access_variable(var_name) {
-      try {
-        safe_eval(var_name)
-        assert.isTrue(false)
-      } catch (err) {
-        assert.equal(err.type, 'forbidden-read-global-variable')
-        assert.equal(err.key, var_name)
-      }
-    }
+    // this stuff is hidden
+    ['lol', 'global', 'window', 'Reflect'].forEach(
+      (prop) => ensure_forbidden(prop, 'forbidden-read-global-variable', prop))
   })
 
   iit('setting global variable forbidden', () => {
-    try_set_variable('lol')
-    try_set_variable('global')
-    try_set_variable('window')
-    try_set_variable('Reflect')
-
-    function try_set_variable(var_name) {
-      try {
-        safe_eval(`${var_name} = 42`)
-        assert.isTrue(false)
-      } catch (err) {
-        assert.equal(err.type, 'forbidden-write-global-variable')
-        assert.equal(err.key, var_name)
-      }
-    }
+    ['lol', 'global', 'window', 'Reflect'].forEach(
+      (prop) => ensure_forbidden(`${prop} = 42`, 'forbidden-write-global-variable', prop))
   })
 
   iit('modifying any object forbidden', () => {
@@ -145,22 +129,12 @@ describe('basics', () => {
     // test if some 'standard' properties are OK
     assert.equal(safe_eval('({a: 1}).a'), 1)
     assert.equal(safe_eval('({a: 1})["a"]'), 1)
-    assert.equal(safe_eval('(()=>null).a'), undefined)
+    assert.equal(safe_eval('(()=>null).a'), undefined);
 
     // test forbidden properties
-    ensure_forbidden('constructor')
-    ensure_forbidden('__proto__')
-    ensure_forbidden('prototype')
-
-    function ensure_forbidden(property) {
-      try {
-        safe_eval(`let a = {}; a.${property}`)
-        assert.isTrue(false)
-      } catch (err) {
-        assert.equal(err.type, 'accessing-forbidden-prop')
-        assert.equal(err.key, property)
-      }
-    }
+    ['constructor', '__proto__', 'prototype'].forEach((prop) => {
+      ensure_forbidden(`let a = {}; a.${prop}`, 'accessing-forbidden-property', prop)
+    })
   })
 
   iit('Array behavior', () => {
@@ -170,19 +144,12 @@ describe('basics', () => {
     assert.deepEqual(safe_eval('[...[0, 1, 2, 3], 4]'), [0, 1, 2, 3, 4])
     assert.equal(safe_eval('[...[0, 1, 2, 3], 4][2]'), 2)
     assert.deepEqual(safe_eval('[0, 1].concat([2, 3])'), [0, 1, 2, 3])
-    assert.deepEqual(safe_eval('const [, a, b, ...rest] = [0, 1, 2, 3, 4]; [...rest, b, a]'), [3, 4, 2, 1])
+    assert.deepEqual(safe_eval('const [, a, b, ...rest] = [0, 1, 2, 3, 4]; [...rest, b, a]'), [3, 4, 2, 1]);
 
     // test that methods really are hidden
-    function ensure_forbidden(property) {
-      try {
-        safe_eval(`[].${property}()`)
-        assert.isTrue(false)
-      } catch (err) {
-        assert.equal(err.type, 'accessing-forbidden-array-method')
-        assert.equal(err.key, property)
-      }
-    }
-    ['pop', 'push', 'splice', 'shift', 'unshift', 'splice', 'fill', 'copyWithin'].forEach(ensure_forbidden)
+    ['pop', 'push', 'splice', 'shift', 'unshift', 'splice', 'fill', 'copyWithin'].forEach((prop) => {
+      ensure_forbidden(`[].${prop}()`, 'accessing-forbidden-array-method', prop)
+    })
   })
 
   iit('Destructuring behavior', () => {
@@ -191,19 +158,6 @@ describe('basics', () => {
     ensure_forbidden('const {__proto__: a} = {}', 'accessing-forbidden-property', '__proto__')
     ensure_forbidden('const {prototype: a} = {}', 'accessing-forbidden-property', 'prototype')
     ensure_forbidden('const x = "sth"; const {[x]: a} = {}', 'computed-property-disallowed')
-
-    function ensure_forbidden(expression, type, key) {
-      try {
-        safe_eval(expression)
-        assert.isTrue(false)
-      } catch (err) {
-        assert.equal(err.type, type)
-        if (key !== undefined) {
-          assert.equal(err.key, key)
-        }
-      }
-    }
-
   })
 
 })

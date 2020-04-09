@@ -1,4 +1,4 @@
-const {create_jail_error} = require('./error_utils')
+const {create_jail_error, create_jail_error_template} = require('./error_utils')
 
 module.exports = function({types: t, template}) {
 
@@ -29,19 +29,10 @@ module.exports = function({types: t, template}) {
     )
   }
 
-  const create_jail_error_template = `(function (type, key) {
-      const err = new Error('jail problem')
-      err.sentinel = 'jail-problem'
-      err.type = type
-      err.key = key
-      return err
-    })
-  `
-
   const safe_get_template = `
     function SAFE_GET_NAME(obj, prop) {
       if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
-        throw ${create_jail_error_template}('accessing-forbidden-prop', prop)
+        throw ${create_jail_error_template}('accessing-forbidden-property', prop)
       }
       let res = obj[prop]
       if (typeof res === 'function') {
@@ -89,16 +80,6 @@ module.exports = function({types: t, template}) {
           throw create_jail_error('accessing-forbidden-property', name)
         }
       },
-      //ObjectPattern(path) {
-      //  path.traverse({
-      //    Program(path) {
-      //      console.log('aaaaa', path)
-      //    },
-      //    Property(path) {
-      //      console.log('bbbbb', path.node.computed, path.node)
-      //    },
-      //  })
-      //},
     }
   }
 }
