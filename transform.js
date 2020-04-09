@@ -1,4 +1,4 @@
-const babel = require('@babel/core')
+const babel = require('@babel/standalone')
 const transform_plugin = require('./babel-transform-plugin')
 
 //const code = `
@@ -7,7 +7,7 @@ const transform_plugin = require('./babel-transform-plugin')
 //console.log(transform(code))
 
 function transform(code) {
-  return babel.transformSync(code, {plugins: [transform_plugin]}).code
+  return babel.transform(code, {plugins: [transform_plugin]}).code
 }
 
 
