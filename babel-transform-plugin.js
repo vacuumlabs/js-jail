@@ -142,6 +142,10 @@ module.exports = (config) => ({types: t, template}) => {
         }
       },
 
+      ThisExpression(path) {
+        throw create_jail_error('forbidden-this')
+      },
+
       BlockStatement(path) {
         path.node.body.unshift(
           template('CHECK_TIME_FUNCTION_NAME()')({

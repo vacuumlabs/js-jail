@@ -231,4 +231,9 @@ describe('basics', () => {
     ensure_forbidden('async function test() {}', 'disallowed-async-code')
     ensure_forbidden('async () => {}', 'disallowed-async-code')
   })
+
+  iit('This', () => {
+    ensure_forbidden('this.x', 'forbidden-this')
+  })
+
 })
