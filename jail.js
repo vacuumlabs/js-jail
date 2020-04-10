@@ -1,6 +1,20 @@
-const {transform} = require('./transform')
 const {create_jail_error} = require('./error_utils')
 const {safe_object_properties, safe_array_methods} = require('./listings')
+const babel = require('@babel/standalone')
+const transform_plugin = require('./babel-transform-plugin')
+
+// eslint-disable-next-line no-unused-vars
+const code = `
+  while (true) {
+    f()
+  }
+`
+
+//console.log(transform(code))
+
+function transform(code, config) {
+  return babel.transform(code, {plugins: [transform_plugin(config)]}).code
+}
 
 function safe_eval(what, config) {
   const safe_what = transform(what, config)
