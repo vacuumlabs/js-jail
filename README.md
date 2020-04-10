@@ -1,8 +1,21 @@
 # Jail for JS code
 
+The jail is built with the following business premises:
+
+### It's OK to support just some subset of javascript
+
+If you are building a plugin system, you can impose your users to use only the subset of the
+language. Even if a bit crippled, it'll still be much convenient to write JS than some custom DSL.
+
+### The code has to run on the main thread
+
+There is no time to serialize / deserialize all the data that is being exchanged with the main thread.
+This rules out (arguably better, since they can interpret wider part of JS) sandboxing solutions
+such as a separate VM or [realms shim](https://github.com/agoric/realms-shim/) ).
+
 ## How does the sandboxing work
 
-We use three different techniques to provide sandboxing.
+We use the combination of three different techniques to provide sandboxing.
 
 ### Forbid read and write global properties using `with` and `Proxy`
 
@@ -22,6 +35,7 @@ try {
 } finally {
   Object.assign = backup
 }
+```
 
 ### Inspecting unsafe code and putting guards into it
 
@@ -32,19 +46,18 @@ We also use guards to periodically check for the current time and to throw if th
 
 ## What JS code can(not) be interpretted
 
-- Any modifications to objects are disallowed for example `({}).a = 'hello'` will throw. Allowed are
-  Map, Set, and splicing objects (for example `{...a, b: c}`)
-- Reading from objects is fine (i.e. ({a: 1}).a === 1), but reading 'dangerous' properties (such as
-  __proto__ will throw.
+- All modifications to objects are disallowed for example `({}).a = 'hello'` will throw. Splicing
+  objects (for example `{...a, b: c}`) is allowed. If you want to mutate object use ES6 Map instead.
+- Reading from objects is fine (i.e. `({a: 1}).a === 1`), but reading 'dangerous' properties (such as
+  `constructor` will throw.
 - Writing to global variables is disallowed.
 - Reading/using of global variables is limited. For example, you cannot use Proxy. You can use
   Object, but Object.assign will throw. You can use Array, but Array.push will throw.
-- You cannot write non-synchronous code
+- You cannot write asynchronous code
 
 # Usage
 ```
   // it's not packaged as npm module yet
-
   const {safe_eval} = require('./jail')
 
   it('showcase', () => {

@@ -38,17 +38,19 @@ function ensure_forbidden(expression, type, key, config) {
 }
 
 describe('basics', () => {
-
   // this is copy-pasted in readme
   it('showcase', () => {
     assert.equal(safe_eval('2 + 2'), 4)
 
-    assert.equal(safe_eval(
-      `
+    assert.equal(
+      safe_eval(
+        `
         const add_bang = (s) => s + "!";
         add_bang("Hello, world");
-      `),
-      'Hello, world!')
+      `
+      ),
+      'Hello, world!'
+    )
 
     // handling timeout
     assert.throws(() => safe_eval('while (true) {}', {timeout: 500}))
@@ -118,7 +120,7 @@ describe('basics', () => {
     safe_eval('Set')
 
     // this stuff is hidden
-    ;['lol', 'global', 'window', 'Reflect'].forEach((prop) =>
+    ;['lol', 'global', 'window', 'Reflect', 'Proxy', 'eval'].forEach((prop) =>
       ensure_forbidden(prop, 'forbidden-read-global-variable', prop)
     )
   })
