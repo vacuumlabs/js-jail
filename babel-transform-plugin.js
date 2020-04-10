@@ -130,6 +130,18 @@ module.exports = (config) => ({types: t, template}) => {
         }
       },
 
+      FunctionDeclaration(path) {
+        if (path.node.async) {
+          throw create_jail_error('disallowed-async-code')
+        }
+      },
+
+      ArrowFunctionExpression(path) {
+        if (path.node.async) {
+          throw create_jail_error('disallowed-async-code')
+        }
+      },
+
       BlockStatement(path) {
         path.node.body.unshift(
           template('CHECK_TIME_FUNCTION_NAME()')({

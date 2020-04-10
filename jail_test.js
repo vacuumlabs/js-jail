@@ -226,4 +226,9 @@ describe('basics', () => {
       {timeout: 500}
     )
   })
+
+  iit('Async', () => {
+    ensure_forbidden('async function test() {}', 'disallowed-async-code')
+    ensure_forbidden('async () => {}', 'disallowed-async-code')
+  })
 })
