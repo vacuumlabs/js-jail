@@ -1,29 +1,6 @@
 const {transform} = require('./transform')
 const {create_jail_error} = require('./error_utils')
 
-const target = {
-  [Symbol.unscopables]: {},
-  Array,
-  Object,
-  Error,
-  Map,
-  Set,
-  Date,
-}
-
-const p = new Proxy(target, {
-  get: (target, key) => {
-    if (key in target) {
-      return target[key]
-    }
-    throw create_jail_error('forbidden-read-global-variable', key)
-  },
-  set: (target, key, value) => {
-    throw create_jail_error('forbidden-write-global-variable', key)
-  },
-  has: (target, key) => true,
-})
-
 function safe_eval(what, config) {
   const safe_what = transform(what, config)
   const backup_object = {}
@@ -85,8 +62,31 @@ function safe_eval(what, config) {
       }
     }
 
+    const target = {
+      [Symbol.unscopables]: {},
+      Array,
+      Object,
+      Error,
+      Map,
+      Set,
+      Date,
+    }
+
+    const scope_proxy = new Proxy(target, {
+      get: (target, key) => {
+        if (key in target) {
+          return target[key]
+        }
+        throw create_jail_error('forbidden-read-global-variable', key)
+      },
+      set: (target, key, value) => {
+        throw create_jail_error('forbidden-write-global-variable', key)
+      },
+      has: (target, key) => true,
+    })
+
     return eval(`
-      with(p) {
+      with(scope_proxy) {
         ${safe_what}
       }
     `)
