@@ -5,14 +5,15 @@ const {
 } = require('./listings')
 
 module.exports = (config) => ({types: t, template}) => {
-  let safe_get_name
-
   function generateSafeGetCall(object, _property, computed) {
     const property = computed ? _property : t.stringLiteral(_property.name)
-
+    // eslint-disable-next-line no-use-before-define
     return t.callExpression(safe_get_name, [object, property])
   }
 
+  /*
+   * All obj.x and obj[x] are translated into safe_get(obj, x) so we can get more controll over x.
+   */
   const safe_get_template = `
     function SAFE_GET_NAME(obj, prop) {
       if (${check_if_prop_is_forbidden_instance_property('prop')}) {
@@ -26,6 +27,10 @@ module.exports = (config) => ({types: t, template}) => {
     }
   `
 
+  /*
+   * Check for timeouts. Not to be too computational heavy, it really checkes for time only once in
+   * N calls.
+   */
   const check_time_function_template = `function CHECK_TIME_FUNCTION_NAME() {
     TIMEOUT_COUNTER_VARIABLE_NAME += 1;
     if (TIMEOUT_COUNTER_VARIABLE_NAME % 256 === 0) {
@@ -43,7 +48,10 @@ module.exports = (config) => ({types: t, template}) => {
     return t.blockStatement([t.returnStatement(what)])
   }
 
-  let check_time_function_name, start_time_variable_name, timeout_counter_variable_name
+  let check_time_function_name,
+    start_time_variable_name,
+    timeout_counter_variable_name,
+    safe_get_name
 
   return {
     visitor: {
@@ -63,6 +71,10 @@ module.exports = (config) => ({types: t, template}) => {
               START_TIME_VARIABLE_NAME: start_time_variable_name,
             })
           )
+          // before we start modifying the code, let's wrap expressions into BlockStatements, so for
+          // example () => 3 becomes () => {return 3;}. This allows us to add timeout checks easier
+          // later. Note that this happens in a .traverse call and therefore happens before all the
+          // other transformations take place.
           path.traverse({
             WhileStatement(path) {
               const child_node = path.node.body

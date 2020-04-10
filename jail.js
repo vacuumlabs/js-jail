@@ -21,6 +21,7 @@ function safe_eval(what, config) {
   const backup_object = {}
   const backup_array_prototype = {}
   try {
+    // in try-finally block, let's disallow some unsage properties/methods of Object and Array
     for (const key of Reflect.ownKeys(Object)) {
       backup_object[key] = Object[key]
       if (!safe_object_properties.includes(key)) {
@@ -39,28 +40,34 @@ function safe_eval(what, config) {
       }
     }
 
-    const target = {
-      [Symbol.unscopables]: {},
-      Array,
-      Object,
-      Error,
-      Map,
-      Set,
-      Date,
-    }
+    // with(scope_proxy) ensures that we intercept all attempts to read/write to global variables.
+    // Everything that is not allowed explicitly throws.
+    // https://www.figma.com/blog/how-we-built-the-figma-plugin-system/
 
-    const scope_proxy = new Proxy(target, {
-      get: (target, key) => {
-        if (key in target) {
-          return target[key]
-        }
-        throw create_jail_error('forbidden-read-global-variable', key)
+    const scope_proxy = new Proxy(
+      {
+        // `with` construct asks for this object, I'm not entirely sure why.
+        [Symbol.unscopables]: {},
+        Array,
+        Object,
+        Error,
+        Map,
+        Set,
+        Date,
       },
-      set: (target, key, value) => {
-        throw create_jail_error('forbidden-write-global-variable', key)
-      },
-      has: (target, key) => true,
-    })
+      {
+        get: (target, key) => {
+          if (key in target) {
+            return target[key]
+          }
+          throw create_jail_error('forbidden-read-global-variable', key)
+        },
+        set: (target, key, value) => {
+          throw create_jail_error('forbidden-write-global-variable', key)
+        },
+        has: (target, key) => true,
+      }
+    )
 
     return eval(`
       with(scope_proxy) {
