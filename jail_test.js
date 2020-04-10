@@ -38,8 +38,36 @@ function ensure_forbidden(expression, type, key, config) {
 }
 
 describe('basics', () => {
+
+  // this is copy-pasted in readme
+  it('showcase', () => {
+    assert.equal(safe_eval('2 + 2'), 4)
+
+    assert.equal(safe_eval(
+      `
+        const add_bang = (s) => s + "!";
+        add_bang("Hello, world");
+      `),
+      'Hello, world!')
+
+    // handling timeout
+    assert.throws(() => safe_eval('while (true) {}', {timeout: 500}))
+
+    // let's try to be nasty
+    const nasty_fragment = `
+      const maybe_harmful_expression = '2 + 2'
+      const wow_obfuscated = 'cons' + 'tru' + 'ctor'
+      Object.keys[wow_obfuscated]('return ' + maybe_harmful_expression)()
+    `
+
+    // normally this'd work
+    assert.equal(eval(nasty_fragment), 4)
+
+    // but not with safe_eval!
+    assert.throws(() => safe_eval(nasty_fragment))
+  })
+
   iit('various basic stuff works', () => {
-    assert.equal(safe_eval('2+2'), 4)
     assert.equal(safe_eval('({a: 1}).a'), 1)
     assert.deepEqual(safe_eval('[1, 2].map((x) => x+1)'), [2, 3])
     assert.deepEqual(
