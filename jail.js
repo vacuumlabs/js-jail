@@ -1,48 +1,11 @@
 const {transform} = require('./transform')
 const {create_jail_error} = require('./error_utils')
+const {safe_object_properties, safe_array_methods} = require('./listings')
 
 function safe_eval(what, config) {
   const safe_what = transform(what, config)
   const backup_object = {}
   const backup_array_prototype = {}
-  const safe_object_properties = [
-    'prototype',
-    'length',
-    'name',
-    'is',
-    'keys',
-    'entries',
-    'fromEntries',
-    'values',
-  ]
-  const safe_array_methods = [
-    'length',
-    'constructor',
-    'concat',
-    'find',
-    'findIndex',
-    'lastIndexOf',
-    'slice',
-    'reverse',
-    'sort',
-    'includes',
-    'indexOf',
-    'join',
-    'keys',
-    'entries',
-    'values',
-    'forEach',
-    'filter',
-    'flat',
-    'flatMap',
-    'map',
-    'every',
-    'some',
-    'reduce',
-    'reduceRight',
-    'toLocaleString',
-    'toString',
-  ]
   try {
     for (const key of Reflect.ownKeys(Object)) {
       backup_object[key] = Object[key]

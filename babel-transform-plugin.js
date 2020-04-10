@@ -1,4 +1,8 @@
 const {create_jail_error, create_jail_error_template} = require('./error_utils')
+const {
+  forbidden_instance_properties,
+  check_if_prop_is_forbidden_instance_property,
+} = require('./listings')
 
 module.exports = (config) => ({types: t, template}) => {
   let safe_get_name
@@ -11,7 +15,7 @@ module.exports = (config) => ({types: t, template}) => {
 
   const safe_get_template = `
     function SAFE_GET_NAME(obj, prop) {
-      if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
+      if (${check_if_prop_is_forbidden_instance_property('prop')}) {
         throw ${create_jail_error_template}('accessing-forbidden-property', prop)
       }
       let res = obj[prop]
@@ -109,7 +113,7 @@ module.exports = (config) => ({types: t, template}) => {
         } = path.node
         if (computed) {
           throw create_jail_error('computed-property-disallowed')
-        } else if (['__proto__', 'constructor', 'prototype'].includes(name)) {
+        } else if (forbidden_instance_properties.includes(name)) {
           throw create_jail_error('accessing-forbidden-property', name)
         }
       },
