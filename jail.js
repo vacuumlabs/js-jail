@@ -7,10 +7,11 @@ const target = {
   Object,
   Error,
   Map,
-  Set
+  Set,
+  Date,
 }
 
-const p = new Proxy(target, { // eslint-disable-line no-unused-vars
+const p = new Proxy(target, {
   get: (target, key) => {
     if (key in target) {
       return target[key]
@@ -23,8 +24,8 @@ const p = new Proxy(target, { // eslint-disable-line no-unused-vars
   has: (target, key) => true
 })
 
-function safe_eval(what) {
-  const safe_what = transform(what)
+function safe_eval(what, config) {
+  const safe_what = transform(what, config)
   const backup_object = {}
   const backup_array_prototype = {}
   const safe_object_properties = ['prototype', 'length', 'name', 'is', 'keys', 'entries', 'fromEntries', 'values']

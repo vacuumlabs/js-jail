@@ -13,18 +13,18 @@ const print_errors = (fn) => async () => {
 }
 
 const iit = (description, fn) => {
-  it(description, print_errors(fn))
+  it(description, print_errors(fn)).timeout(5000)
 }
 
 iit.only = (description, fn) => {
-  it.only(description, print_errors(fn))
+  it.only(description, print_errors(fn)).timeout(5000)
 }
 
 iit.skip = (description, fn) => it.skip(description, fn)
 
-function ensure_forbidden(expression, type, key) {
+function ensure_forbidden(expression, type, key, config) {
   try {
-    safe_eval(expression)
+    safe_eval(expression, config)
     assert.isTrue(false)
   } catch (err) {
     if (err.type == null) {
@@ -156,5 +156,18 @@ describe('basics', () => {
     ensure_forbidden('const {prototype: a} = {}', 'accessing-forbidden-property', 'prototype')
     ensure_forbidden('const x = "sth"; const {[x]: a} = {}', 'computed-property-disallowed')
   })
+
+  iit('Timeout', () => {
+    ensure_forbidden('let i = 0; while (true) {i += 1}', 'timeout', null, {timeout: 500})
+    const fib_str = 'function fib(n) {return n<2 ? n : fib(n-1) + fib(n-2)};'
+    assert.equal(safe_eval(`${fib_str} fib(10);`), 55)
+    ensure_forbidden(`${fib_str} fib(100);`, 'timeout', null, {timeout: 500})
+    ensure_forbidden(`
+      const a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a)))))))));
+    `, 'timeout', null, {timeout: 500})
+    ensure_forbidden('for (let i = 0; i < 10000; i++) {for (let j = 0; j < 10000; j++) {new Date()}}', 'timeout', null, {timeout: 500})
+  })
+
 
 })
