@@ -1,0 +1,15 @@
+# project specific
+build
+
+# general
+.*
+*.lock
+*.log
+*.py
+*.md
+*.json
+*.ico
+*.txt
+
+# whitelist
+!/.eslintrc.js
