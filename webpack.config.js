@@ -4,6 +4,6 @@ module.exports = {
   entry: './jail_test.js',
   output: {
     path: path.resolve(__dirname, 'build'),
-    filename: 'bundle.js'
-  }
+    filename: 'bundle.js',
+  },
 }

@@ -1,19 +1,12 @@
 const {create_jail_error, create_jail_error_template} = require('./error_utils')
 
 module.exports = (config) => ({types: t, template}) => {
-
   let safe_get_name
 
   function generateSafeGetCall(object, _property, computed) {
     const property = computed ? _property : t.stringLiteral(_property.name)
 
-    return t.callExpression(
-      safe_get_name,
-      [
-        object,
-        property
-      ]
-    )
+    return t.callExpression(safe_get_name, [object, property])
   }
 
   const safe_get_template = `
@@ -56,8 +49,16 @@ module.exports = (config) => ({types: t, template}) => {
           check_time_function_name = path.scope.generateUidIdentifier('check_time')
           start_time_variable_name = path.scope.generateUidIdentifier('check_time')
           timeout_counter_variable_name = path.scope.generateUidIdentifier('timeout_counter')
-          path.node.body.unshift(template('let TIMEOUT_COUNTER_VARIABLE_NAME = 0')({TIMEOUT_COUNTER_VARIABLE_NAME: timeout_counter_variable_name}))
-          path.node.body.unshift(template('const START_TIME_VARIABLE_NAME = (new Date()).getTime()')({START_TIME_VARIABLE_NAME: start_time_variable_name}))
+          path.node.body.unshift(
+            template('let TIMEOUT_COUNTER_VARIABLE_NAME = 0')({
+              TIMEOUT_COUNTER_VARIABLE_NAME: timeout_counter_variable_name,
+            })
+          )
+          path.node.body.unshift(
+            template('const START_TIME_VARIABLE_NAME = (new Date()).getTime()')({
+              START_TIME_VARIABLE_NAME: start_time_variable_name,
+            })
+          )
           path.traverse({
             WhileStatement(path) {
               const child_node = path.node.body
@@ -75,18 +76,20 @@ module.exports = (config) => ({types: t, template}) => {
               if (path.node.body.type !== 'BlockStatement') {
                 path.get('body').replaceWith(put_to_block_return(path.node.body))
               }
-            }
+            },
           })
         },
         exit(path, {opts}) {
           path.node.body.push(template(safe_get_template)({SAFE_GET_NAME: safe_get_name}))
-          path.node.body.push(template(check_time_function_template)({
-            CHECK_TIME_FUNCTION_NAME: check_time_function_name,
-            START_TIME_VARIABLE_NAME: start_time_variable_name,
-            TIMEOUT: String((config || {}).timeout == null ? 2000 : config.timeout),
-            TIMEOUT_COUNTER_VARIABLE_NAME: timeout_counter_variable_name,
-          }))
-        }
+          path.node.body.push(
+            template(check_time_function_template)({
+              CHECK_TIME_FUNCTION_NAME: check_time_function_name,
+              START_TIME_VARIABLE_NAME: start_time_variable_name,
+              TIMEOUT: String((config || {}).timeout == null ? 2000 : config.timeout),
+              TIMEOUT_COUNTER_VARIABLE_NAME: timeout_counter_variable_name,
+            })
+          )
+        },
       },
       AssignmentExpression(path) {
         const {right, left} = path.node
@@ -95,14 +98,15 @@ module.exports = (config) => ({types: t, template}) => {
         }
       },
       MemberExpression(path) {
-        path.replaceWith(generateSafeGetCall(
-          path.node.object,
-          path.node.property,
-          path.node.computed
-        ))
+        path.replaceWith(
+          generateSafeGetCall(path.node.object, path.node.property, path.node.computed)
+        )
       },
       Property(path) {
-        const {computed, key: {name}} = path.node
+        const {
+          computed,
+          key: {name},
+        } = path.node
         if (computed) {
           throw create_jail_error('computed-property-disallowed')
         } else if (['__proto__', 'constructor', 'prototype'].includes(name)) {
@@ -111,9 +115,12 @@ module.exports = (config) => ({types: t, template}) => {
       },
 
       BlockStatement(path) {
-        path.node.body.unshift(template('CHECK_TIME_FUNCTION_NAME()')({CHECK_TIME_FUNCTION_NAME: check_time_function_name}))
-      }
-
-    }
+        path.node.body.unshift(
+          template('CHECK_TIME_FUNCTION_NAME()')({
+            CHECK_TIME_FUNCTION_NAME: check_time_function_name,
+          })
+        )
+      },
+    },
   }
 }

@@ -37,9 +37,7 @@ function ensure_forbidden(expression, type, key, config) {
   }
 }
 
-
 describe('basics', () => {
-
   iit('various basic stuff works', () => {
     assert.equal(safe_eval('2+2'), 4)
     assert.equal(safe_eval('({a: 1}).a'), 1)
@@ -50,21 +48,34 @@ describe('basics', () => {
         const res = new Set();
         [0,1,2,3].forEach((x) => {res.add(2*x)});
         (new Array(...res.values()));
-        `),
+        `
+      ),
       [0, 2, 4, 6]
     )
   })
 
   iit('Object behavior', () => {
-
     assert.deepEqual(safe_eval('Object.keys({a: 1, b: 2})'), ['a', 'b'])
     assert.deepEqual(safe_eval('Object.values({a: 1, b: 2})'), [1, 2])
 
     const unsafe_object_properties = [
-      'assign', 'getOwnPropertyDescriptor',
-      'getOwnPropertyDescriptors', 'getOwnPropertyNames', 'getOwnPropertySymbols',
-      'preventExtensions', 'seal', 'create', 'defineProperties', 'defineProperty',
-      'freeze', 'getPrototypeOf', 'setPrototypeOf', 'isExtensible', 'isFrozen', 'isSealed']
+      'assign',
+      'getOwnPropertyDescriptor',
+      'getOwnPropertyDescriptors',
+      'getOwnPropertyNames',
+      'getOwnPropertySymbols',
+      'preventExtensions',
+      'seal',
+      'create',
+      'defineProperties',
+      'defineProperty',
+      'freeze',
+      'getPrototypeOf',
+      'setPrototypeOf',
+      'isExtensible',
+      'isFrozen',
+      'isSealed',
+    ]
     for (const prop of unsafe_object_properties) {
       ensure_forbidden(`Object.${prop}()`, 'accessing-forbidden-object-method', prop)
     }
@@ -76,16 +87,18 @@ describe('basics', () => {
     safe_eval('Array')
     safe_eval('Error')
     safe_eval('Map')
-    safe_eval('Set');
+    safe_eval('Set')
 
     // this stuff is hidden
-    ['lol', 'global', 'window', 'Reflect'].forEach(
-      (prop) => ensure_forbidden(prop, 'forbidden-read-global-variable', prop))
+    ;['lol', 'global', 'window', 'Reflect'].forEach((prop) =>
+      ensure_forbidden(prop, 'forbidden-read-global-variable', prop)
+    )
   })
 
   iit('setting global variable forbidden', () => {
-    ['lol', 'global', 'window', 'Reflect'].forEach(
-      (prop) => ensure_forbidden(`${prop} = 42`, 'forbidden-write-global-variable', prop))
+    ;['lol', 'global', 'window', 'Reflect'].forEach((prop) =>
+      ensure_forbidden(`${prop} = 42`, 'forbidden-write-global-variable', prop)
+    )
   })
 
   iit('modifying any object forbidden', () => {
@@ -126,10 +139,10 @@ describe('basics', () => {
     // test if some 'standard' properties are OK
     assert.equal(safe_eval('({a: 1}).a'), 1)
     assert.equal(safe_eval('({a: 1})["a"]'), 1)
-    assert.equal(safe_eval('(()=>null).a'), undefined);
+    assert.equal(safe_eval('(()=>null).a'), undefined)
 
     // test forbidden properties
-    ['constructor', '__proto__', 'prototype'].forEach((prop) => {
+    ;['constructor', '__proto__', 'prototype'].forEach((prop) => {
       ensure_forbidden(`let a = {}; a.${prop}`, 'accessing-forbidden-property', prop)
     })
   })
@@ -141,12 +154,19 @@ describe('basics', () => {
     assert.deepEqual(safe_eval('[...[0, 1, 2, 3], 4]'), [0, 1, 2, 3, 4])
     assert.equal(safe_eval('[...[0, 1, 2, 3], 4][2]'), 2)
     assert.deepEqual(safe_eval('[0, 1].concat([2, 3])'), [0, 1, 2, 3])
-    assert.deepEqual(safe_eval('const [, a, b, ...rest] = [0, 1, 2, 3, 4]; [...rest, b, a]'), [3, 4, 2, 1]);
+    assert.deepEqual(safe_eval('const [, a, b, ...rest] = [0, 1, 2, 3, 4]; [...rest, b, a]'), [
+      3,
+      4,
+      2,
+      1,
+    ])
 
     // test that methods really are hidden
-    ['pop', 'push', 'splice', 'shift', 'unshift', 'splice', 'fill', 'copyWithin'].forEach((prop) => {
-      ensure_forbidden(`[].${prop}()`, 'accessing-forbidden-array-method', prop)
-    })
+    ;['pop', 'push', 'splice', 'shift', 'unshift', 'splice', 'fill', 'copyWithin'].forEach(
+      (prop) => {
+        ensure_forbidden(`[].${prop}()`, 'accessing-forbidden-array-method', prop)
+      }
+    )
   })
 
   iit('Destructuring behavior', () => {
@@ -162,12 +182,20 @@ describe('basics', () => {
     const fib_str = 'function fib(n) {return n<2 ? n : fib(n-1) + fib(n-2)};'
     assert.equal(safe_eval(`${fib_str} fib(10);`), 55)
     ensure_forbidden(`${fib_str} fib(100);`, 'timeout', null, {timeout: 500})
-    ensure_forbidden(`
+    ensure_forbidden(
+      `
       const a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a.map(x => a)))))))));
-    `, 'timeout', null, {timeout: 500})
-    ensure_forbidden('for (let i = 0; i < 10000; i++) {for (let j = 0; j < 10000; j++) {new Date()}}', 'timeout', null, {timeout: 500})
+    `,
+      'timeout',
+      null,
+      {timeout: 500}
+    )
+    ensure_forbidden(
+      'for (let i = 0; i < 10000; i++) {for (let j = 0; j < 10000; j++) {new Date()}}',
+      'timeout',
+      null,
+      {timeout: 500}
+    )
   })
-
-
 })

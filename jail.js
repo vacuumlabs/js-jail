@@ -21,15 +21,51 @@ const p = new Proxy(target, {
   set: (target, key, value) => {
     throw create_jail_error('forbidden-write-global-variable', key)
   },
-  has: (target, key) => true
+  has: (target, key) => true,
 })
 
 function safe_eval(what, config) {
   const safe_what = transform(what, config)
   const backup_object = {}
   const backup_array_prototype = {}
-  const safe_object_properties = ['prototype', 'length', 'name', 'is', 'keys', 'entries', 'fromEntries', 'values']
-  const safe_array_methods = ['length', 'constructor', 'concat', 'find', 'findIndex', 'lastIndexOf', 'slice', 'reverse', 'sort', 'includes', 'indexOf', 'join', 'keys', 'entries', 'values', 'forEach', 'filter', 'flat', 'flatMap', 'map', 'every', 'some', 'reduce', 'reduceRight', 'toLocaleString', 'toString']
+  const safe_object_properties = [
+    'prototype',
+    'length',
+    'name',
+    'is',
+    'keys',
+    'entries',
+    'fromEntries',
+    'values',
+  ]
+  const safe_array_methods = [
+    'length',
+    'constructor',
+    'concat',
+    'find',
+    'findIndex',
+    'lastIndexOf',
+    'slice',
+    'reverse',
+    'sort',
+    'includes',
+    'indexOf',
+    'join',
+    'keys',
+    'entries',
+    'values',
+    'forEach',
+    'filter',
+    'flat',
+    'flatMap',
+    'map',
+    'every',
+    'some',
+    'reduce',
+    'reduceRight',
+    'toLocaleString',
+    'toString',
+  ]
   try {
     for (const key of Reflect.ownKeys(Object)) {
       backup_object[key] = Object[key]

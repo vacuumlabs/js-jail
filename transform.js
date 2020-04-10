@@ -12,5 +12,4 @@ function transform(code, config) {
   return babel.transform(code, {plugins: [transform_plugin(config)]}).code
 }
 
-
 module.exports = {transform}
