@@ -107,8 +107,9 @@ describe('basics', () => {
       'isSealed',
     ]
     for (const prop of unsafe_object_properties) {
-      ensure_forbidden(`Object.${prop}()`, 'accessing-forbidden-object-method', prop)
+      ensure_forbidden(`Object.${prop}()`, 'accessing-forbidden-property', prop)
     }
+    ensure_forbidden('Object.__defineSetter__()', 'accessing-forbidden-property', '__defineSetter__')
   })
 
   iit('reading global variable forbidden', () => {
@@ -194,7 +195,7 @@ describe('basics', () => {
     // test that methods really are hidden
     ;['pop', 'push', 'splice', 'shift', 'unshift', 'splice', 'fill', 'copyWithin'].forEach(
       (prop) => {
-        ensure_forbidden(`[].${prop}()`, 'accessing-forbidden-array-method', prop)
+        ensure_forbidden(`[].${prop}()`, 'accessing-forbidden-property', prop)
       }
     )
   })
@@ -237,5 +238,4 @@ describe('basics', () => {
   iit('This', () => {
     ensure_forbidden('this.x', 'forbidden-this')
   })
-
 })

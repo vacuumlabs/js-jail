@@ -1,5 +1,4 @@
-const safe_object_properties = [
-  'prototype',
+const safe_Object_properties = [
   'length',
   'name',
   'is',
@@ -9,7 +8,7 @@ const safe_object_properties = [
   'values',
 ]
 
-const safe_array_methods = [
+const safe_Array_prototype_properties = [
   'length',
   'constructor',
   'concat',
@@ -38,14 +37,17 @@ const safe_array_methods = [
   'toString',
 ]
 
+const safe_Object_prototype_properties = ['hasOwnProperty', 'toString', 'valueOf', 'toLocaleString']
+
 const forbidden_instance_properties = ['__proto__', 'constructor', 'prototype']
 
 const check_if_prop_is_forbidden_instance_property = (prop_name) =>
   forbidden_instance_properties.map((prop) => `${prop_name} === "${prop}"`).join(' || ')
 
 module.exports = {
-  safe_object_properties,
-  safe_array_methods,
+  safe_Object_properties,
+  safe_Array_prototype_properties,
+  safe_Object_prototype_properties,
   forbidden_instance_properties,
   check_if_prop_is_forbidden_instance_property,
 }
