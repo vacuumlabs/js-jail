@@ -238,4 +238,10 @@ describe('basics', () => {
   iit('This', () => {
     ensure_forbidden('this.x', 'forbidden-this')
   })
+
+  iit('Ppershing\'s vulnerability', () => {
+    ensure_forbidden(
+      'const x = () => null; const c = {toString: () => "constructor"}; x[c]("return 2+2")()',
+      'accessing-forbidden-property')
+  })
 })

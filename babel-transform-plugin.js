@@ -16,7 +16,8 @@ module.exports = (config) => ({types: t, template}) => {
    */
   const safe_get_template = `
     function SAFE_GET_NAME(obj, prop) {
-      if (${check_if_prop_is_forbidden_instance_property('prop')}) {
+      if (!(typeof prop === 'string' || typeof prop === 'number' || typeof prop === 'symbol') ||
+          ${check_if_prop_is_forbidden_instance_property('prop')}) {
         throw ${create_jail_error_template}('accessing-forbidden-property', prop)
       }
       let res = obj[prop]
