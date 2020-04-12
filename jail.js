@@ -20,7 +20,7 @@ function transform(code, config) {
   return babel.transform(code, {plugins: [transform_plugin(config)]}).code
 }
 
-function safe_eval(what, config) {
+function safe_eval(what, api, config) {
   const safe_what = transform(what, config)
   const backup_Object = {}
   const backup_Object_prototype = {}
@@ -62,6 +62,7 @@ function safe_eval(what, config) {
     // https://www.figma.com/blog/how-we-built-the-figma-plugin-system/
     const scope_proxy = new Proxy(
       {
+        ...api,
         // `with` construct asks for this object, I'm not entirely sure why.
         [Symbol.unscopables]: {},
         Array,

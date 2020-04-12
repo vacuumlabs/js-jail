@@ -22,9 +22,9 @@ iit.only = (description, fn) => {
 
 iit.skip = (description, fn) => it.skip(description, fn)
 
-function ensure_forbidden(expression, type, key, config) {
+function ensure_forbidden(expression, type, key, api, config) {
   try {
-    safe_eval(expression, config)
+    safe_eval(expression, api, config)
     assert.isTrue(false)
   } catch (err) {
     if (err.type == null) {
@@ -53,7 +53,7 @@ describe('basics', () => {
     )
 
     // handling timeout
-    assert.throws(() => safe_eval('while (true) {}', {timeout: 500}))
+    assert.throws(() => safe_eval('while (true) {}', {}, {timeout: 500}))
 
     // let's try to be nasty
     const nasty_fragment = `
@@ -67,6 +67,12 @@ describe('basics', () => {
 
     // but not with safe_eval!
     assert.throws(() => safe_eval(nasty_fragment))
+
+    // can interact with main-thread via given API
+    let x = 0
+    const api = {increment: () => {x += 1}}
+    safe_eval('increment();', api)
+    assert.equal(x, 1)
   })
 
   iit('various basic stuff works', () => {
@@ -209,10 +215,10 @@ describe('basics', () => {
   })
 
   iit('Timeout', () => {
-    ensure_forbidden('let i = 0; while (true) {i += 1}', 'timeout', null, {timeout: 500})
+    ensure_forbidden('let i = 0; while (true) {i += 1}', 'timeout', null, null, {timeout: 500})
     const fib_str = 'function fib(n) {return n<2 ? n : fib(n-1) + fib(n-2)};'
     assert.equal(safe_eval(`${fib_str} fib(10);`), 55)
-    ensure_forbidden(`${fib_str} fib(100);`, 'timeout', null, {timeout: 500})
+    ensure_forbidden(`${fib_str} fib(100);`, 'timeout', null, null, {timeout: 500})
     ensure_forbidden(
       `
       const a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -220,11 +226,13 @@ describe('basics', () => {
     `,
       'timeout',
       null,
+      null,
       {timeout: 500}
     )
     ensure_forbidden(
       'for (let i = 0; i < 10000; i++) {for (let j = 0; j < 10000; j++) {new Date()}}',
       'timeout',
+      null,
       null,
       {timeout: 500}
     )
@@ -244,4 +252,5 @@ describe('basics', () => {
       'const x = () => null; const c = {toString: () => "constructor"}; x[c]("return 2+2")()',
       'accessing-forbidden-property')
   })
+
 })

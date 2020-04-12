@@ -88,6 +88,14 @@ We also use guards to periodically check for the current time and to throw if th
   })
 ```
 
+# Guarantees
+
+Sandboxed code cannot do any side-effects on the main-thread code, but that explicitly allowed by
+exposed API.
+
+We do our best to terminate the code after given timeout. We however cannot guarantee this.
+
+
 # Development
 ```
 yarn
