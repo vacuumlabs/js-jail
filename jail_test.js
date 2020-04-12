@@ -37,25 +37,31 @@ function ensure_forbidden(expression, type, key, api, config) {
   }
 }
 
-describe('basics', () => {
+describe('showcase', () => {
   // this is copy-pasted in readme
-  it('showcase', () => {
-    assert.equal(safe_eval('2 + 2'), 4)
 
+  it('evaluating OK code works', () => {
     assert.equal(
-      safe_eval(
-        `
+      safe_eval(`
         const add_bang = (s) => s + "!";
         add_bang("Hello, world");
-      `
-      ),
+      `),
       'Hello, world!'
     )
+  })
 
-    // handling timeout
-    assert.throws(() => safe_eval('while (true) {}', {}, {timeout: 500}))
+  it('can interact with main-thread via given API', () => {
+    let x = 0
+    const api = {
+      increment: () => {
+        x += 1
+      },
+    }
+    safe_eval('increment();', api)
+    assert.equal(x, 1)
+  })
 
-    // let's try to be nasty
+  it('try to break out of jail', () => {
     const nasty_fragment = `
       const maybe_harmful_expression = '2 + 2'
       const wow_obfuscated = 'cons' + 'tru' + 'ctor'
@@ -67,14 +73,14 @@ describe('basics', () => {
 
     // but not with safe_eval!
     assert.throws(() => safe_eval(nasty_fragment))
-
-    // can interact with main-thread via given API
-    let x = 0
-    const api = {increment: () => {x += 1}}
-    safe_eval('increment();', api)
-    assert.equal(x, 1)
   })
 
+  it('can handle timeout', () => {
+    assert.throws(() => safe_eval('while (true) {}', /*api*/ {}, /*config*/ {timeout: 500}))
+  })
+})
+
+describe('basics', () => {
   iit('various basic stuff works', () => {
     assert.equal(safe_eval('({a: 1}).a'), 1)
     assert.deepEqual(safe_eval('[1, 2].map((x) => x+1)'), [2, 3])
@@ -115,7 +121,11 @@ describe('basics', () => {
     for (const prop of unsafe_object_properties) {
       ensure_forbidden(`Object.${prop}()`, 'accessing-forbidden-property', prop)
     }
-    ensure_forbidden('Object.__defineSetter__()', 'accessing-forbidden-property', '__defineSetter__')
+    ensure_forbidden(
+      'Object.__defineSetter__()',
+      'accessing-forbidden-property',
+      '__defineSetter__'
+    )
   })
 
   iit('reading global variable forbidden', () => {
@@ -247,10 +257,10 @@ describe('basics', () => {
     ensure_forbidden('this.x', 'forbidden-this')
   })
 
-  iit('Ppershing\'s vulnerability', () => {
+  iit("Ppershing's vulnerability", () => {
     ensure_forbidden(
       'const x = () => null; const c = {toString: () => "constructor"}; x[c]("return 2+2")()',
-      'accessing-forbidden-property')
+      'accessing-forbidden-property'
+    )
   })
-
 })

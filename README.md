@@ -57,23 +57,34 @@ We also use guards to periodically check for the current time and to throw if th
 
 # Usage
 ```
-  // it's not packaged as npm module yet
-  const {safe_eval} = require('./jail')
+// it's not packaged as npm module yet
+const {safe_eval} = require('./jail')
 
-  it('showcase', () => {
-    assert.equal(safe_eval('2 + 2'), 4)
+describe('showcase', () => {
+  // this is copy-pasted in readme
 
-    assert.equal(safe_eval(
-      `
+  it('evaluating OK code works', () => {
+    assert.equal(
+      safe_eval(`
         const add_bang = (s) => s + "!";
         add_bang("Hello, world");
       `),
-      'Hello, world!')
+      'Hello, world!'
+    )
+  })
 
-    // handling timeout
-    assert.throws(() => safe_eval('while (true) {}', {timeout: 500}))
+  it('can interact with main-thread via given API', () => {
+    let x = 0
+    const api = {
+      increment: () => {
+        x += 1
+      },
+    }
+    safe_eval('increment();', api)
+    assert.equal(x, 1)
+  })
 
-    // let's try to be nasty
+  it('try to break out of jail', () => {
     const nasty_fragment = `
       const maybe_harmful_expression = '2 + 2'
       const wow_obfuscated = 'cons' + 'tru' + 'ctor'
@@ -86,6 +97,11 @@ We also use guards to periodically check for the current time and to throw if th
     // but not with safe_eval!
     assert.throws(() => safe_eval(nasty_fragment))
   })
+
+  it('can handle timeout', () => {
+    assert.throws(() => safe_eval('while (true) {}', /*api*/ {}, /*config*/ {timeout: 500}))
+  })
+})
 ```
 
 # Guarantees

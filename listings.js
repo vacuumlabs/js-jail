@@ -1,12 +1,4 @@
-const safe_Object_properties = [
-  'length',
-  'name',
-  'is',
-  'keys',
-  'entries',
-  'fromEntries',
-  'values',
-]
+const safe_Object_properties = ['length', 'name', 'is', 'keys', 'entries', 'fromEntries', 'values']
 
 const safe_Array_prototype_properties = [
   'length',
